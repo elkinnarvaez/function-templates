@@ -63,18 +63,20 @@ const createCustomElement = (element, attributes, children) => {
 
 function newTableRow(verification) {
   // Phone number
-  const phoneNumber = document.createElement('td');
-  phoneNumber.innerHTML = `+${'*'.repeat(
-    verification.phone_number.length - 5
-  )}${verification.phone_number.slice(-4)}`;
+  const phoneNumberElement = document.createElement('td');
+  phoneNumberElement.innerHTML = `+${'*'.repeat(
+    verification.phoneNumber.length - 5
+  )}${verification.phoneNumber.slice(-4)}`;
 
   // Verification start datetime
-  const verificationStart = document.createElement('td');
-  verificationStart.innerHTML = verification.verification_start_datetime;
+  const verificationStartDatetimeElement = document.createElement('td');
+  verificationStartDatetimeElement.innerHTML =
+    verification.verificationStartDatetime;
 
   // Verification check datetime
-  const verificationCheck = document.createElement('td');
-  verificationCheck.innerHTML = verification.verification_check_datetime;
+  const verificationCheckDatetimeElement = document.createElement('td');
+  verificationCheckDatetimeElement.innerHTML =
+    verification.verificationCheckDatetime;
 
   // Status
   const statusSpan = document.createElement('span');
@@ -88,14 +90,16 @@ function newTableRow(verification) {
   } else {
     statusSpan.innerHTML = 'Expired';
   }
-  const status = createCustomElement('td', { class: 'status' }, [statusSpan]);
+  const statusElement = createCustomElement('td', { class: 'status' }, [
+    statusSpan,
+  ]);
 
   // Create new row
   return createCustomElement('tr', {}, [
-    phoneNumber,
-    verificationStart,
-    verificationCheck,
-    status,
+    phoneNumberElement,
+    verificationStartDatetimeElement,
+    verificationCheckDatetimeElement,
+    statusElement,
   ]).outerHTML;
 }
 
@@ -200,5 +204,3 @@ async function startVerificationsRetrieval(event) {
 document
   .getElementById('start-verifications-retrieval')
   .addEventListener('submit', (event) => startVerificationsRetrieval(event));
-
-removeVerifications();

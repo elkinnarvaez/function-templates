@@ -26,46 +26,51 @@
  * }
  */
 
-const fs = require('fs');
-const path = require('path');
-const os = require('os');
-const sqlite3 = require('sqlite3');
-
 const assets = Runtime.getAssets();
+const { createVerification } = require(assets['/services/verifications.js']
+  .path);
 const {
-  connectToDatabaseAndRunQueries,
-  verificationStartDatabaseUpdate,
-} = require(assets['/helpers/db.js'].path);
+  detectMissingParams,
+  countryCodeField,
+  phoneNumberField,
+} = require(assets['/services/helpers.js'].path);
 
 // eslint-disable-next-line consistent-return
 exports.handler = async function (context, event, callback) {
   const response = new Twilio.Response();
   response.appendHeader('Content-Type', 'application/json');
 
+  const missingParams = detectMissingParams(
+    [countryCodeField, phoneNumberField],
+    event
+  );
+  if (missingParams.length > 0) {
+    response.setStatusCode(400);
+    response.setBody({
+      message: `Missing parameters; please provide: '${missingParams.join(
+        ', '
+      )}'.`,
+    });
+    return callback(null, response);
+  }
+
   try {
     const client = context.getTwilioClient();
     const service = context.VERIFY_SERVICE_SID;
-
-    const [countryCode, phoneNumber] = [event.countryCode, event.phoneNumber];
-
+    const { countryCode, phoneNumber } = event;
     const verification = await client.verify
       .services(service)
       .verifications.create({
         to: `${countryCode}${phoneNumber}`,
         channel: 'sna',
       });
-
+    await createVerification(verification.to);
     response.setStatusCode(200);
     response.setBody({
       message: 'Creation of SNA verification successful',
       snaUrl: verification.sna.url,
     });
-    const dbResponse = await connectToDatabaseAndRunQueries(
-      verificationStartDatabaseUpdate,
-      response,
-      verification
-    );
-    return callback(null, dbResponse);
+    return callback(null, response);
   } catch (error) {
     const statusCode = error.status || 400;
     response.setStatusCode(statusCode);
